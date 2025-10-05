@@ -9,13 +9,13 @@ class FCFS : public Scheduler {
     std::queue<int>q;
 public:
     void add_task(int pid) {
-        rq.push(pid); 
+        q.push(pid); 
     }
 
     int pick_next(int now) {
-        if (rq.empty()) return -1;
-        int pid = rq.front(); 
-        rq.pop();
+        if (q.empty()) return -1;
+        int pid = q.front(); 
+        q.pop();
         return pid;
     }
 };

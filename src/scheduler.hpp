@@ -35,7 +35,14 @@ struct Result {
     int total_ticks = 0;
     int context_switches = 0;
     int cpu_busy = 0;
+
+    double avg_waiting = 0;
+    double avg_turnaround = 0;
+    double avg_response = 0;
+    double cpu_utilization = 0;
+    double throughput = 0;
 };
+
 
 class Scheduler {
 public:

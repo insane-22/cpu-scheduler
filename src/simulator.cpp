@@ -67,5 +67,18 @@ Result simulate(std::vector<Task> tasks, Scheduler &sched, int max_time) {
 
     res.total_ticks = now;
     for (auto &t : tasks) res.tasks[t.pid] = t;
+
+    double total_wait = 0, total_tat = 0, total_resp = 0;
+    for (auto &t : tasks) {
+        total_wait += t.waiting_time;
+        total_tat += t.turnaround_time;
+        total_resp += t.response_time;
+    }
+
+    res.avg_waiting = total_wait / n;
+    res.avg_turnaround = total_tat / n;
+    res.avg_response = total_resp / n;
+    res.cpu_utilization = (double)res.cpu_busy / res.total_ticks * 100.0;
+    res.throughput = (double)n / res.total_ticks;
     return res;
 }

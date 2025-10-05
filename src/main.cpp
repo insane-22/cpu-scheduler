@@ -3,6 +3,15 @@
 #include "implementation.hpp"
 #include "simulator.hpp"
 
+void print_stats(const Result &r){
+    std::cout << "Average Waiting Time: " << r.avg_waiting << "\n";
+    std::cout << "Average Turnaround Time: " << r.avg_turnaround << "\n";
+    std::cout << "Average Response Time: " << r.avg_response << "\n";
+    std::cout << "CPU Utilization: " << r.cpu_utilization << "%\n";
+    std::cout << "Throughput: " << r.throughput << " tasks/unit time\n";
+    std::cout << "Context Switches: " << r.context_switches << "\n";
+};
+
 int main() {
     std::vector<Task> tasks = {
         Task(1, 0, 5),
@@ -16,6 +25,8 @@ int main() {
     std::cout << "Total CPU Busy Time: " << r1.cpu_busy << "\n";
     for (auto &e : r1.events)
         std::cout << "t=" << e.time << " pid=" << e.pid << " " << e.type << "\n";
+    std::cout << "\n--- FCFS Stats ---\n";
+    print_stats(r1);
 
     RoundRobin rr(2);
     Result r2 = simulate(tasks, rr, 50);
@@ -23,5 +34,7 @@ int main() {
     for (auto &e : r2.events)
         std::cout << "t=" << e.time << " pid=" << e.pid << " " << e.type << "\n";
 
+    std::cout << "\n--- RR Stats ---\n";
+    print_stats(r2);
     return 0;
 }
