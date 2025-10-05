@@ -20,16 +20,20 @@ Result simulate(std::vector<Task> tasks, Scheduler &sched, int max_time) {
 
     RoundRobin *rr = dynamic_cast<RoundRobin*>(&sched);
 
+    // Track current run interval start for each PID
+    int interval_start = -1;
+
     while (now < max_time && finished < n) {
         while (ai < n && tasks[ai].arrival <= now) {
             sched.add_task(tasks[ai].pid);
             res.tasks[tasks[ai].pid] = tasks[ai];
             ai++;
         }
-    
+
         if (running == -1) {
             running = sched.pick_next(now);
             quantum_used = 0;
+
             if (running != -1) {
                 auto &t = *tmap[running];
                 if (t.start_time == -1) {
@@ -37,6 +41,7 @@ Result simulate(std::vector<Task> tasks, Scheduler &sched, int max_time) {
                     t.response_time = now - t.arrival;
                 }
                 res.events.push_back({now, running, "start"});
+                interval_start = now;  // start new interval
             }
         }
 
@@ -52,11 +57,19 @@ Result simulate(std::vector<Task> tasks, Scheduler &sched, int max_time) {
                 t.turnaround_time = t.completion_time - t.arrival;
                 t.waiting_time = t.turnaround_time - t.burst;
                 res.events.push_back({now, running, "complete"});
+
+                // Add run interval
+                res.run_intervals[running].push_back({interval_start, now});
+
                 running = -1;
                 finished++;
             } else if (rr && quantum_used >= rr->get_quantum()) {
                 rr->requeue(running);
                 res.events.push_back({now, running, "preempt"});
+
+                // Add run interval
+                res.run_intervals[running].push_back({interval_start, now});
+
                 running = -1;
                 res.context_switches++;
             }
@@ -80,5 +93,6 @@ Result simulate(std::vector<Task> tasks, Scheduler &sched, int max_time) {
     res.avg_response = total_resp / n;
     res.cpu_utilization = (double)res.cpu_busy / res.total_ticks * 100.0;
     res.throughput = (double)n / res.total_ticks;
+
     return res;
 }

@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
+#include <utility>
 
 struct Task {
     int pid = 0;
@@ -32,6 +33,8 @@ struct Event {
 struct Result {
     std::vector<Event> events;
     std::unordered_map<int, Task> tasks;
+    std::unordered_map<int, std::vector<std::pair<int,int>>> run_intervals;
+
     int total_ticks = 0;
     int context_switches = 0;
     int cpu_busy = 0;
@@ -43,11 +46,11 @@ struct Result {
     double throughput = 0;
 };
 
-
 class Scheduler {
 public:
     virtual void add_task(int pid) = 0;
     virtual int pick_next(int now) = 0;
+    virtual void on_tick(int now, int pid) {}
     virtual ~Scheduler() {}
 };
 
