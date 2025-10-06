@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 COMPONENTS Widgets REQUIRED)
 
-set(CMAKE_AUTOMOC ON)          # <-- Important
+set(CMAKE_AUTOMOC ON)        
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 

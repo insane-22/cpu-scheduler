@@ -31,7 +31,6 @@ void GanttWidget::paintEvent(QPaintEvent *event) {
     int total_ticks = std::max(1, res_.total_ticks);
     double scale = (double)content_width / (double)total_ticks;
 
-    // draw time grid lines
     p.setPen(QPen(Qt::lightGray));
     for (int t = 0; t <= total_ticks; ++t) {
         int x = margin_left + (int)(t * scale);

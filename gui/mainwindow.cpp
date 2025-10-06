@@ -14,6 +14,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     algoCombo_ = new QComboBox();
     algoCombo_->addItem("FCFS");
     algoCombo_->addItem("RoundRobin");
+    algoCombo_->addItem("SJF");
+    algoCombo_->addItem("SRTF");
     controls->addWidget(algoCombo_);
     controls->addWidget(new QLabel("Quantum:"));
     quantumSpin_ = new QSpinBox();
@@ -43,8 +45,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     setCentralWidget(central);
 
     connect(runBtn_, &QPushButton::clicked, this, &MainWindow::onRunClicked);
-    connect(algoCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &MainWindow::onAlgoChanged);
+    connect(algoCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onAlgoChanged);
 
     onAlgoChanged(algoCombo_->currentIndex());
 }
@@ -66,6 +67,15 @@ void MainWindow::onRunClicked() {
     Result res;
     if (algoCombo_->currentText() == "FCFS") {
         FCFS sched;
+        res = simulate(tasks, sched, 200);
+    }else if(algoCombo_->currentText() == "SJF") {
+        SJF sched;
+        std::unordered_map<int,int> bm;
+        for (auto &t : tasks) bm[t.pid] = t.burst;
+        sched.set_bursts(bm);
+        res = simulate(tasks, sched, 200);
+    } else if(algoCombo_->currentText() == "SRTF") {
+        SRTF sched;
         res = simulate(tasks, sched, 200);
     } else {
         int q = quantumSpin_->value();

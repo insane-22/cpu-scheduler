@@ -19,6 +19,7 @@ Result simulate(std::vector<Task> tasks, Scheduler &sched, int max_time) {
     int quantum_used = 0;
 
     RoundRobin *rr = dynamic_cast<RoundRobin*>(&sched);
+    SRTF *srt = dynamic_cast<SRTF*>(&sched);
 
     int interval_start = -1;
 
@@ -47,6 +48,7 @@ Result simulate(std::vector<Task> tasks, Scheduler &sched, int max_time) {
         if (running != -1) {
             auto &t = *tmap[running];
             t.remaining--;
+            if (srt) srt->update_remaining(t.pid, t.remaining);
             res.cpu_busy++;
             quantum_used++;
             now++;

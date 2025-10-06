@@ -36,5 +36,24 @@ int main() {
 
     std::cout << "\n--- RR Stats ---\n";
     print_stats(r2);
+
+    SJF sjf;
+    std::unordered_map<int,int> bm;
+    for (auto &t : tasks) bm[t.pid] = t.burst;
+    sjf.set_bursts(bm);
+    Result r3 = simulate(tasks, sjf, 50);
+    std::cout << "\n--- SJF ---\n";
+    for (auto &e : r3.events)
+        std::cout << "t=" << e.time << " pid=" << e.pid << " " << e.type << "\n";   
+    std::cout << "\n--- SJF Stats ---\n";
+    print_stats(r3);
+
+    SRTF srtf;
+    Result r4 = simulate(tasks, srtf, 50);
+    std::cout << "\n--- SRTF ---\n";
+    for (auto &e : r4.events)
+        std::cout << "t=" << e.time << " pid=" << e.pid << " " << e.type << "\n";
+    std::cout << "\n--- SRTF Stats ---\n";  
+    print_stats(r4);
     return 0;
 }
