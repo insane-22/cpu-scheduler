@@ -20,7 +20,6 @@ Result simulate(std::vector<Task> tasks, Scheduler &sched, int max_time) {
 
     RoundRobin *rr = dynamic_cast<RoundRobin*>(&sched);
 
-    // Track current run interval start for each PID
     int interval_start = -1;
 
     while (now < max_time && finished < n) {
@@ -41,7 +40,7 @@ Result simulate(std::vector<Task> tasks, Scheduler &sched, int max_time) {
                     t.response_time = now - t.arrival;
                 }
                 res.events.push_back({now, running, "start"});
-                interval_start = now;  // start new interval
+                interval_start = now; 
             }
         }
 
@@ -52,23 +51,31 @@ Result simulate(std::vector<Task> tasks, Scheduler &sched, int max_time) {
             quantum_used++;
             now++;
 
+            while (ai < n && tasks[ai].arrival <= now) {
+                sched.add_task(tasks[ai].pid);
+                res.tasks[tasks[ai].pid] = tasks[ai];
+                ai++;
+            }
+
             if (t.remaining == 0) {
                 t.completion_time = now;
                 t.turnaround_time = t.completion_time - t.arrival;
                 t.waiting_time = t.turnaround_time - t.burst;
                 res.events.push_back({now, running, "complete"});
 
-                // Add run interval
-                res.run_intervals[running].push_back({interval_start, now});
+                if (interval_start != -1) res.run_intervals[running].push_back({interval_start, now});
 
                 running = -1;
                 finished++;
             } else if (rr && quantum_used >= rr->get_quantum()) {
-                rr->requeue(running);
+                while (ai < n && tasks[ai].arrival <= now) {
+                    sched.add_task(tasks[ai].pid);
+                    res.tasks[tasks[ai].pid] = tasks[ai];
+                    ai++;
+                }
                 res.events.push_back({now, running, "preempt"});
-
-                // Add run interval
-                res.run_intervals[running].push_back({interval_start, now});
+                rr->requeue(running);
+                if (interval_start != -1) res.run_intervals[running].push_back({interval_start, now});
 
                 running = -1;
                 res.context_switches++;
