@@ -2,6 +2,13 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QFile>
+#include <QTextStream>
+#include <QPixmap>
+#include <QPainter>
+#include <QPdfWriter>
 #include "implementation.hpp"
 #include "simulator.hpp"
 
@@ -25,6 +32,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     runBtn_ = new QPushButton("Run");
     runBtn_->setFixedWidth(80);
     controls->addWidget(runBtn_);
+    exportCsvBtn_ = new QPushButton("Export CSV");
+    exportPngBtn_ = new QPushButton("Export PNG");
+    exportPdfBtn_ = new QPushButton("Export PDF");
+    controls->addWidget(exportCsvBtn_);
+    controls->addWidget(exportPngBtn_);
+    controls->addWidget(exportPdfBtn_);
+
+    connect(exportCsvBtn_, &QPushButton::clicked, this, &MainWindow::onExportCSV);
+    connect(exportPngBtn_, &QPushButton::clicked, this, &MainWindow::onExportPNG);
+    connect(exportPdfBtn_, &QPushButton::clicked, this, &MainWindow::onExportPDF);
 
     controls->addStretch(1);
     mainLayout->addLayout(controls);
@@ -142,6 +159,7 @@ void MainWindow::onRunClicked() {
     }
 
     gantt_->setResult(res);
+    lastResult_ = res;
 
     auto setVal = [&](int row, const QString &v){
         statsTable_->setItem(row, 1, new QTableWidgetItem(v));
@@ -154,4 +172,86 @@ void MainWindow::onRunClicked() {
     setVal(4, QString::number(res.cpu_utilization, 'f', 2));
     setVal(5, QString::number(res.throughput, 'f', 4));
     setVal(6, QString::number(res.context_switches));
+}
+
+void MainWindow::onExportCSV() {
+    if (lastResult_.tasks.empty()) {
+        QMessageBox::warning(this, "No Data", "Run a simulation first!");
+        return;
+    }
+
+    QString fileName = QFileDialog::getSaveFileName(this, "Export CSV", "", "CSV Files (*.csv)");
+    if (fileName.isEmpty()) return;
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::warning(this, "Error", "Cannot open file for writing.");
+        return;
+    }
+
+    QTextStream out(&file);
+    out << "PID,Arrival,Burst,Waiting,Turnaround,Response,Completion\n";
+    for (auto &kv : lastResult_.tasks) {
+        const Task &t = kv.second;
+        out << t.pid << "," << t.arrival << "," << t.burst << ","
+            << t.waiting_time << "," << t.turnaround_time << ","
+            << t.response_time << "," << t.completion_time << "\n";
+    }
+    out << "\nAverages,,," 
+        << lastResult_.avg_waiting << "," 
+        << lastResult_.avg_turnaround << ","
+        << lastResult_.avg_response << "\n";
+    out << "CPU Utilization (%)," << lastResult_.cpu_utilization << "\n";
+    out << "Throughput," << lastResult_.throughput << "\n";
+    out << "Context Switches," << lastResult_.context_switches << "\n";
+    file.close();
+
+    QMessageBox::information(this, "Exported", "CSV exported successfully!");
+}
+
+void MainWindow::onExportPNG() {
+    if (lastResult_.tasks.empty()) {
+        QMessageBox::warning(this, "No Data", "Run a simulation first!");
+        return;
+    }
+
+    QString filename = QFileDialog::getSaveFileName(this, "Save PNG", "", "PNG Files (*.png)");
+    if (filename.isEmpty()) return;
+
+    if (!filename.endsWith(".png", Qt::CaseInsensitive)) filename += ".png";
+
+    QPixmap pixmap = gantt_->grab();
+
+    bool ok = pixmap.save(filename, "PNG");
+    if (!ok) {
+        QMessageBox::critical(this, "Export Failed", "Unable to save PNG file.\nMake sure you have write permission.");
+        return;
+    }
+
+    QMessageBox::information(this, "Export", "PNG exported successfully:\n" + filename);
+}
+
+void MainWindow::onExportPDF() {
+    if (lastResult_.tasks.empty()) {
+        QMessageBox::warning(this, "No Data", "Run a simulation first!");
+        return;
+    }
+
+    QString filename = QFileDialog::getSaveFileName(this, "Save PDF", "", "PDF Files (*.pdf)");
+    if (filename.isEmpty()) return;
+
+    if (!filename.endsWith(".pdf", Qt::CaseInsensitive)) filename += ".pdf";
+
+    QPdfWriter pdf(filename);
+    pdf.setPageSize(QPageSize(QPageSize::A4));
+    pdf.setResolution(300);
+
+    QPainter painter(&pdf);
+    QPixmap pixmap = gantt_->grab();
+
+    QRect targetRect(50, 100, pdf.width() - 100, pixmap.height() * ((pdf.width() - 100.0) / pixmap.width()));
+    painter.drawPixmap(targetRect, pixmap);
+    painter.end();
+
+    QMessageBox::information(this, "Export", "PDF exported successfully:\n" + filename);
 }
